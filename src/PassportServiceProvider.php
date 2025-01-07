@@ -52,6 +52,9 @@ class PassportServiceProvider extends LaravelPassportServiceProvider
         // Passport::useTokenModel()
 
         parent::boot();
+        if(isset(Passport::$runsMigrations)) {
+            $this->registerMigrations();
+        }
 
         $this->app->bindIf(ClaimRepositoryInterface::class, ClaimRepository::class);
         $this->app->bindIf(UserRepositoryInterface::class, UserRepository::class);
@@ -168,9 +171,15 @@ class PassportServiceProvider extends LaravelPassportServiceProvider
 
     protected function registerMigrations()
     {
-        parent::registerMigrations();
-
-        if (Passport::$runsMigrations) {
+        if(isset(Passport::$runsMigrations)) {
+            parent::registerMigrations();
+            if (Passport::$runsMigrations) {
+                $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+            }
+        } else {
+            if ($this->app->runningInConsole() && ! Passport::clientUuids()) {
+                $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+            }
             $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         }
     }
